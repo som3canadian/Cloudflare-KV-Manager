@@ -1,0 +1,184 @@
+# Cloudflare KV Management
+
+**Disclaimer:** This project is not affiliated with Cloudflare.
+
+A more complete and simple solution for managing Cloudflare KV storage. One stop shop for managing your KV namespaces 🔥.
+
+## Features
+
+- Comes with a small python library for easy integration
+- Can be used without the UI
+- Use as many namespaces as you want
+- Search for keys in a namespace (search by key, value, or metadata)
+- Add, edit, and delete keys
+- Supports metadata and expiration for keys
+- Delete all keys in a namespace
+- Delete a single key
+- Filter
+- Pagination
+
+**Note:**
+
+- No authentification is provided for the UI since you can use Cloudflare Zero Trust to protect it (see [customize-preview-deployments-access](https://developers.cloudflare.com/pages/configuration/preview-deployments/#customize-preview-deployments-access) and [enable-access-on-your-pagesdev-domain](https://developers.cloudflare.com/pages/platform/known-issues/#enable-access-on-your-pagesdev-domain)).
+- Don't forget to set custom header and custom secret for the middleware.
+
+**Optional**
+
+- Use custom domain for middleware and / or UI
+- Protect UI with Zero Trust
+- Restrict CORS policy
+
+![screenshot1](./img/screenshot1.jpg)
+![screenshot2](./img/screenshot2.jpg)
+![screenshot3](./img/screenshot3.jpg)
+![screenshot4](./img/screenshot4.jpg)
+
+## Prerequisites
+
+- wrangler cli (make sure it's logged in)
+- One or more Cloudflare KV namespaces
+- node and npm
+
+## Installation
+
+```bash
+# clone the repo
+git clone https://github.com/som3canadian/Cloudflare-KV-Manager.git
+cd Cloudflare-KV-Manager
+cp templates/middleware_config.json workers/kv-management-middleware/wrangler.json
+cp templates/ui_config.env workers/kv-management-ui/.env
+
+# deploy the middleware
+cd workers/kv-management-middleware
+# modify the wrangler.json file
+npm install
+wrangler deploy
+
+# deploy the ui
+cd ../kv-management-ui
+# modify the .env file
+npm install
+npm run deploy
+# run the ui locally
+# npm run preview
+
+# go back to the root directory
+cd ../../
+```
+
+## Configuration
+
+### Middleware
+
+- File: workers/kv-management-middleware/wrangler.json
+
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kv-management-middleware",
+  "main": "src/index.js",
+  "account_id": "<your-account-id>",
+  "compatibility_date": "2025-01-29",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "DEFAULT_EXPIRATION_DAYS": 7,
+    "CUSTOM_HEADER": "<your-custom-header>"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    }
+  ]
+}
+```
+
+### UI
+
+- File: workers/kv-management-ui/.env
+
+```bash
+VITE_APP_WORKER_URL=<your-worker-url>
+VITE_APP_WORKER_KV_SECRET=<your-secret>
+VITE_APP_CUSTOM_HEADER=<your-custom-header>
+```
+
+### Python Library
+
+- File: lib/cf_kv.py
+
+```python
+this_kv_worker_url = "<your-worker-url>"
+this_kv_worker_secret = "<your-secret>"
+this_kv_worker_custom_header = "<your-custom-header>"
+```
+
+## Usage
+
+### Using with the middleware only
+
+```bash
+# List all namespaces
+curl -X GET "https://<your-worker-url>/namespaces" -H "X-Custom-Auth: <your-secret>"
+
+# List all keys in a namespace
+curl -X GET "https://<your-worker-url>/list?namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
+
+# Get a key
+curl -X GET "https://<your-worker-url>/get?key=<key>&namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
+
+# Set a key with metadata and expiration
+curl -X GET "https://<your-worker-url>/set?key=<key>&namespace=<namespace>&value=<value>&metadata=<metadata>&expiration=<expiration>" -H "X-Custom-Auth: <your-secret>"
+
+# Set a key without expiration and metadata
+curl -X GET "https://<your-worker-url>/set?key=<key>&namespace=<namespace>&value=<value>" -H "X-Custom-Auth: <your-secret>"
+
+# Delete a key
+curl -X GET "https://<your-worker-url>/delete?key=<key>&namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
+
+# Delete all keys in a namespace
+curl -X GET "https://<your-worker-url>/delete_all?namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
+```
+
+### Using with the middleware and the UI
+
+- Navigate to the URL of your CF Page
+
+### Using the python library
+
+```python
+import lib.cf_kv as cf_kv
+
+# List all namespaces
+cf_kv.list_namespaces()
+
+# List all keys in a namespace
+cf_kv.list_kv_keys('your_namespace')
+
+# Set a key with metadata and expiration
+cf_kv.set_key_value('some_key_name', 'some_value', metadata, 'your_namespace', expiration_days)
+
+# Get a key
+cf_kv.get_key_value('some_key_name', 'your_namespace')
+
+# Get a key with metadata
+cf_kv.get_key_metadata('some_key_name', 'your_namespace')
+
+# Delete a key
+cf_kv.delete_key('some_key_name', 'your_namespace')
+
+# Delete all keys in a namespace
+cf_kv.delete_all_keys('your_namespace')
+```
