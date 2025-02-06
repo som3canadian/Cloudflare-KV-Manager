@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kv-management-middleware",
+  "main": "src/index.js",
+  "account_id": "<your-account-id>",
+  "compatibility_date": "2025-01-29",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "DEFAULT_EXPIRATION_DAYS": 7,
+    "CUSTOM_HEADER": "<your-custom-header>"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    }
+  ]
+}
