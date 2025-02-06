@@ -118,9 +118,9 @@ cd ../../
 VITE_APP_WORKER_URL=<your-worker-url>
 VITE_APP_WORKER_KV_SECRET=<your-secret>
 VITE_APP_CUSTOM_HEADER=<your-custom-header>
-MIDDLEWARE_USE_ZERO_TRUST=False
-MIDDLEWARE_SERVICE_AUTH_CLIENT_ID="<your-service-auth-client-id>"
-MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET="<your-service-auth-client-secret>"
+VITE_MIDDLEWARE_USE_ZERO_TRUST=false
+VITE_MIDDLEWARE_SERVICE_AUTH_CLIENT_ID="<your-service-auth-client-id>"
+VITE_MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET="<your-service-auth-client-secret>"
 ```
 
 ### Python Library
