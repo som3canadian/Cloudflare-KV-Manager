@@ -6,13 +6,13 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 
 ## Features
 
-- Comes with a small python library for easy integration
+- Comes with a small python library for easy integration 🐍
 - Can be used without the UI
-- Use as many namespaces as you want
-- Search for keys in a namespace (search by key, value, or metadata)
-- Add, edit, and delete keys
-- Supports view / edit metadata and expiration fields
-- Delete all keys in a namespace
+- Use as many namespaces as you want 🔄
+- Search for keys in a namespace (search by key, value, or metadata) 🔍
+- Add, edit, and delete keys 📝
+- Supports view / edit metadata and expiration fields 👁️
+- Delete all keys in a namespace 🗑️
 - Delete a single key
 - Filter
 - Pagination
