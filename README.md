@@ -11,7 +11,7 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 - Use as many namespaces as you want
 - Search for keys in a namespace (search by key, value, or metadata)
 - Add, edit, and delete keys
-- Supports metadata and expiration for keys
+- Supports view / edit metadata and expiration fields
 - Delete all keys in a namespace
 - Delete a single key
 - Filter
@@ -21,6 +21,7 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 
 - No authentification is provided for the UI since you can use Cloudflare Zero Trust to protect it (see [customize-preview-deployments-access](https://developers.cloudflare.com/pages/configuration/preview-deployments/#customize-preview-deployments-access) and [enable-access-on-your-pagesdev-domain](https://developers.cloudflare.com/pages/platform/known-issues/#enable-access-on-your-pagesdev-domain)).
 - Don't forget to set custom header and custom secret for the middleware.
+- Supports Zero Trust for the middleware (you need to adjust config file to use custom domain and set workers_dev to false)
 
 **Optional**
 
@@ -45,6 +46,8 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 # clone the repo
 git clone https://github.com/som3canadian/Cloudflare-KV-Manager.git
 cd Cloudflare-KV-Manager
+
+# copy the config files
 cp templates/middleware_config.json workers/kv-management-middleware/wrangler.json
 cp templates/ui_config.env workers/kv-management-ui/.env
 
@@ -53,6 +56,8 @@ cd workers/kv-management-middleware
 # modify the wrangler.json file
 npm install
 wrangler deploy
+# set the WORKER_KV_SECRET
+wrangler secret put WORKER_KV_SECRET
 
 # deploy the ui
 cd ../kv-management-ui
@@ -113,6 +118,9 @@ cd ../../
 VITE_APP_WORKER_URL=<your-worker-url>
 VITE_APP_WORKER_KV_SECRET=<your-secret>
 VITE_APP_CUSTOM_HEADER=<your-custom-header>
+MIDDLEWARE_USE_ZERO_TRUST=False
+MIDDLEWARE_SERVICE_AUTH_CLIENT_ID="<your-service-auth-client-id>"
+MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET="<your-service-auth-client-secret>"
 ```
 
 ### Python Library
@@ -123,6 +131,9 @@ VITE_APP_CUSTOM_HEADER=<your-custom-header>
 this_kv_worker_url = "<your-worker-url>"
 this_kv_worker_secret = "<your-secret>"
 this_kv_worker_custom_header = "<your-custom-header>"
+MIDDLEWARE_USE_ZERO_TRUST = False
+MIDDLEWARE_SERVICE_AUTH_CLIENT_ID = "<your-service-auth-client-id>"
+MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET = "<your-service-auth-client-secret>"
 ```
 
 ## Usage
@@ -150,6 +161,9 @@ curl -X GET "https://<your-worker-url>/delete?key=<key>&namespace=<namespace>" -
 
 # Delete all keys in a namespace
 curl -X GET "https://<your-worker-url>/delete_all?namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
+
+# List all namespaces with the middleware behind Zero Trust
+curl -X GET "https://<your-worker-url>/namespaces" -H "X-Custom-Auth: <your-secret>" -H "Cf-Access-Client-Id: <your-service-auth-client-id>" -H "Cf-Access-Client-Secret: <your-service-auth-client-secret>"
 ```
 
 ### Using with the middleware and the UI
@@ -182,3 +196,7 @@ cf_kv.delete_key('some_key_name', 'your_namespace')
 # Delete all keys in a namespace
 cf_kv.delete_all_keys('your_namespace')
 ```
+
+## TODO
+
+- [ ] Add search endpoint to middleware (Only support with the UI for now)
