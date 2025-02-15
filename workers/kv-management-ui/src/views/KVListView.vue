@@ -87,6 +87,12 @@
                 {{ sortField === 'timestamp' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
               </i>
             </th>
+            <th @click="sortBy('expiration')" class="sortable">
+              Expiration
+              <i class="material-icons sort-icon">
+                {{ sortField === 'expiration' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
+              </i>
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -131,6 +137,7 @@
               </div>
             </td>
             <td>{{ formatDate(item.metadata?.timestamp) }}</td>
+            <td>{{ formatExpirationDays(item?.expiration) }}</td>
             <td>
               <div class="action-buttons">
                 <button @click="viewDetails(item)" class="action-btn" title="View Details">
@@ -314,6 +321,7 @@
               >
             </div>
 
+
             <div class="form-group">
               <label for="value">Value:</label>
               <textarea
@@ -326,18 +334,20 @@
               ></textarea>
             </div>
 
+            <br />
             <div class="form-group">
-              <label for="expiration">Expiration (days)(Default is set in the middleware):</label>
+              <label for="expiration">Expiration in days(Default is set in the middleware).<br />Leave it empty for default or 0 for no expiration:</label>
               <input
                 id="expiration"
                 v-model="newKey.expiration"
                 type="number"
                 min="0"
                 class="form-input"
-                placeholder="Optional: Days until expiration (0 for no expiration)"
+                placeholder="Optional: Set expiration in days."
               >
             </div>
 
+            <br />
             <div class="form-group">
               <label>Metadata:</label>
               <div class="metadata-list">
@@ -419,18 +429,20 @@
               ></textarea>
             </div>
 
+            <br />
             <div class="form-group">
-              <label for="expiration">Expiration (days)(Default is set in the middleware):</label>
+              <label for="expiration">Expiration in days(Default is set in the middleware).<br />Leave it empty for default or 0 for no expiration:</label>
               <input
                 id="expiration"
                 v-model="modifyingKey.expiration"
                 type="number"
                 min="0"
                 class="form-input"
-                placeholder="Optional: Days until expiration (0 for no expiration)"
+                placeholder="Optional: Set expiration in days."
               >
             </div>
 
+            <br />
             <div class="form-group">
               <label>Metadata:</label>
               <div class="metadata-list">
@@ -626,6 +638,10 @@ export default {
             aValue = a.metadata?.timestamp || ''
             bValue = b.metadata?.timestamp || ''
             break
+          case 'expiration':
+            aValue = a.expiration || Number.MAX_SAFE_INTEGER
+            bValue = b.expiration || Number.MAX_SAFE_INTEGER
+            break
           default:
             return 0
         }
@@ -723,9 +739,24 @@ export default {
       if (!timestamp) return 'N/A'
       return new Date(timestamp).toLocaleString()
     },
-    formatExpiration(timestamp) {
-      if (!timestamp) return 'Never'
-      return new Date(timestamp * 1000).toLocaleString()
+    formatExpiration(expiration) {
+      if (!expiration) return 'Never'
+      return new Date(expiration * 1000).toLocaleString()
+    },
+    formatExpirationDays(expiration) {
+      if (!expiration) return 'Never'
+      const now = Math.floor(Date.now() / 1000) // Current time in seconds
+      const remainingSeconds = expiration - now
+      if (remainingSeconds <= 0) return 'Expired'
+      const years = Math.floor(remainingSeconds / (365 * 24 * 60 * 60))
+      let days = Math.floor(remainingSeconds / (24 * 60 * 60))
+      const hours = Math.floor((remainingSeconds % (24 * 60 * 60)) / (60 * 60))
+      const minutes = Math.floor((remainingSeconds % (60 * 60)) / 60)
+      if (years > 0) {
+        days = days - (years * 365)
+        return `${years}y ${days}d ${hours}h ${minutes}m`
+      }
+      return `${days}d ${hours}h ${minutes}m`
     },
     viewDetails(item) {
       this.selectedItem = item
@@ -940,8 +971,7 @@ export default {
 
       // Calculate expiration in days if it exists
       const expiration = item.expiration ?
-        Math.ceil((item.expiration * 1000 - Date.now()) / (24 * 60 * 60 * 1000)) :
-        ''
+        Math.ceil((item.expiration * 1000 - Date.now()) / (24 * 60 * 60 * 1000)) : 0
 
       this.modifyingKey = {
         name: item.name,
@@ -980,7 +1010,7 @@ export default {
         params.append('value', typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : parsedValue)
 
         // Add expiration if provided (convert days to seconds)
-        if (this.modifyingKey.expiration) {
+        if (this.modifyingKey.expiration !== '') {
           params.append('expiration', String(this.modifyingKey.expiration * 24 * 60 * 60))
         }
 

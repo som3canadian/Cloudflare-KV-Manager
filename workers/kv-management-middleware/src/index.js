@@ -118,7 +118,7 @@ async function handleRequest(request) {
 			}
 
 			// Set key with or without expiration
-			if (expiration === 0) {
+			if (parseInt(providedExpiration) === 0) {
 				await MY_KV_NAMESPACE.put(key, value, {
 					metadata: fullMetadata,
 				})
