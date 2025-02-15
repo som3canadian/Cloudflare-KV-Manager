@@ -47,7 +47,7 @@ def get_key(key, namespace):
 def get_key_value(key, namespace):
     endpoint = f"/get?key={key}&namespace={namespace}"
     response = request_builder(endpoint, this_kv_worker_secret)
-    value = response['data']['value']['value']
+    value = response['data']['value']
     return value
 
 def get_key_metadata(key, namespace):
