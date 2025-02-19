@@ -887,9 +887,11 @@ export default {
           value: typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : parsedValue
         })
 
-        // Add expiration if provided (convert days to seconds)
-        if (this.newKey.expiration) {
-          params.append('expiration', String(this.newKey.expiration * 24 * 60 * 60))
+        // Add expiration if provided or explicitly set to 0
+        if (this.newKey.expiration !== '') {
+          // Convert days to seconds, or use 0 for no expiration
+          const expirationSeconds = this.newKey.expiration === 0 ? 0 : this.newKey.expiration * 24 * 60 * 60
+          params.append('expiration', String(expirationSeconds))
         }
 
         // Add metadata if provided
