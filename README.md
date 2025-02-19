@@ -32,7 +32,7 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 ![screenshot1](./img/screenshot1.jpg)
 ![screenshot2](./img/screenshot2.jpg)
 ![screenshot3](./img/screenshot3.jpg)
-![screenshot4](./img/screenshot4.jpg)
+![screenshot5](./img/screenshot5.jpg)
 
 ## Prerequisites
 
