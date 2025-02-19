@@ -87,13 +87,19 @@
                 {{ sortField === 'timestamp' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
               </i>
             </th>
+            <th @click="sortBy('creation_timestamp')" class="sortable">
+              Creation Date
+              <i class="material-icons sort-icon">
+                {{ sortField === 'creation_timestamp' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
+              </i>
+            </th>
             <th @click="sortBy('expiration')" class="sortable">
               Expiration
               <i class="material-icons sort-icon">
                 {{ sortField === 'expiration' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
               </i>
             </th>
-            <th>Actions</th>
+            <th style="text-align: center;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -137,6 +143,7 @@
               </div>
             </td>
             <td>{{ formatDate(item.metadata?.timestamp) }}</td>
+            <td>{{ formatDate(item.metadata?.creation_timestamp) }}</td>
             <td>{{ formatExpirationDays(item?.expiration) }}</td>
             <td>
               <div class="action-buttons">
@@ -654,6 +661,10 @@ export default {
           case 'expiration':
             aValue = a.expiration || Number.MAX_SAFE_INTEGER
             bValue = b.expiration || Number.MAX_SAFE_INTEGER
+            break
+          case 'creation_timestamp':
+            aValue = a.metadata?.creation_timestamp || ''
+            bValue = b.metadata?.creation_timestamp || ''
             break
           default:
             return 0

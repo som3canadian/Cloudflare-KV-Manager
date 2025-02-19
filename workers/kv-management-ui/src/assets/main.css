@@ -23,7 +23,7 @@
 /* Main Container */
 .kv-list {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto 100px auto;
 }
 
@@ -519,6 +519,7 @@ textarea.form-input {
 .action-buttons {
   display: flex;
   gap: 8px;
+  justify-content: center;
 }
 
 .modify-btn {

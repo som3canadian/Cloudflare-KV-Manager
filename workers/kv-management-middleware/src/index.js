@@ -2,6 +2,10 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
+function getTimestamp() {
+	return new Date().toISOString();
+}
+
 async function handleRequest(request) {
 	// Helper function for consistent headers
 	const headers = {
@@ -24,7 +28,7 @@ async function handleRequest(request) {
 		const errorResponse = {
 			status: 'error',
 			message: 'Only GET requests are allowed',
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(errorResponse), {
 			status: 405,
@@ -38,7 +42,7 @@ async function handleRequest(request) {
 		const errorResponse = {
 			status: 'error',
 			message: 'Unauthorized access',
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(errorResponse), {
 			status: 401,
@@ -60,7 +64,7 @@ async function handleRequest(request) {
 			data: {
 				namespaces: namespaces
 			},
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(response), {
 			status: 200,
@@ -73,7 +77,7 @@ async function handleRequest(request) {
 		const errorResponse = {
 			status: 'error',
 			message: 'Invalid namespace',
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(errorResponse), {
 			status: 400,
@@ -85,7 +89,7 @@ async function handleRequest(request) {
 		const errorResponse = {
 			status: 'error',
 			message: 'Namespace not found',
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(errorResponse), {
 			status: 400,
@@ -100,21 +104,28 @@ async function handleRequest(request) {
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
-		// console.log(b64encoded_metadata)
-		// console.log(metadata)
+
 		if (key && value) {
+			// Check if key already exists
+			const existingValue = await MY_KV_NAMESPACE.getWithMetadata(key)
+
+			// Set the metadata with timestamp
+			let fullMetadata = {
+        ...metadata,
+        timestamp: getTimestamp(),
+    }
+			if (!existingValue.value) {
+				fullMetadata = {
+					...fullMetadata,
+					creation_timestamp: getTimestamp(),
+				}
+			}
 			// Parse value as JSON if possible
 			let parsedValue
 			try {
 				parsedValue = JSON.parse(value)
 			} catch {
 				parsedValue = value
-			}
-
-			// Set the metadata with timestamp
-			const fullMetadata = {
-				...metadata,
-				timestamp: new Date().toISOString(),
 			}
 
 			// Set key with or without expiration
@@ -141,7 +152,7 @@ async function handleRequest(request) {
 					metadata: storedMetadata,
 					expiration: expiration === 0 ? null : Math.floor(Date.now() / 1000) + expiration
 				},
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 
 			return new Response(JSON.stringify(response), {
@@ -152,7 +163,7 @@ async function handleRequest(request) {
 			const errorResponse = {
 				status: 'error',
 				message: 'Missing key or value',
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(errorResponse), {
 				status: 400,
@@ -166,7 +177,7 @@ async function handleRequest(request) {
 				status: 'success',
 				message: `Deleted key ${key}`,
 				data: { key },
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(response), {
 				status: 200,
@@ -176,7 +187,7 @@ async function handleRequest(request) {
 			const errorResponse = {
 				status: 'error',
 				message: 'Missing key',
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(errorResponse), {
 				status: 400,
@@ -193,7 +204,7 @@ async function handleRequest(request) {
 			status: 'success',
 			message: `All keys deleted in namespace ${namespace}`,
 			data: { 'message': 'All keys deleted in namespace ' + namespace },
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(response), {
 			status: 200,
@@ -206,7 +217,7 @@ async function handleRequest(request) {
 				const response = {
 					status: 'success',
 					data: { key, value },
-					timestamp: new Date().toISOString(),
+					timestamp: getTimestamp(),
 				}
 				return new Response(JSON.stringify(response), {
 					status: 200,
@@ -216,7 +227,7 @@ async function handleRequest(request) {
 				const errorResponse = {
 					status: 'error',
 					message: `Key ${key} not found`,
-					timestamp: new Date().toISOString(),
+					timestamp: getTimestamp(),
 				}
 				return new Response(JSON.stringify(errorResponse), {
 					status: 404,
@@ -227,7 +238,7 @@ async function handleRequest(request) {
 			const errorResponse = {
 				status: 'error',
 				message: 'Missing key',
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(errorResponse), {
 				status: 400,
@@ -264,7 +275,7 @@ async function handleRequest(request) {
 					list_complete: listResult.list_complete,
 					cursor: listResult.cursor,
 				},
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(response), {
 				status: 200,
@@ -274,7 +285,7 @@ async function handleRequest(request) {
 			const errorResponse = {
 				status: 'error',
 				message: error.toString(),
-				timestamp: new Date().toISOString(),
+				timestamp: getTimestamp(),
 			}
 			return new Response(JSON.stringify(errorResponse), {
 				status: 500,
@@ -285,7 +296,7 @@ async function handleRequest(request) {
 		const errorResponse = {
 			status: 'error',
 			message: 'Invalid path',
-			timestamp: new Date().toISOString(),
+			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(errorResponse), {
 			status: 404,
