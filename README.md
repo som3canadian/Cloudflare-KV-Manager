@@ -138,8 +138,6 @@ MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET = "<your-service-auth-client-secret>"
 
 ## Usage
 
-**Note:** metadata must be send in base64 format (curl and python library).
-
 ### Using with the middleware only
 
 ```bash
@@ -177,26 +175,30 @@ curl -X GET "https://<your-worker-url>/namespaces" -H "X-Custom-Auth: <your-secr
 ```python
 import lib.cf_kv as cf_kv
 
+expiration_days = 5
+metadata = {'custom_metadata': 'some_custom_metadata'}
+namespace = 'my_namespace'
+
 # List all namespaces
 cf_kv.list_namespaces()
 
 # List all keys in a namespace
-cf_kv.list_kv_keys('your_namespace')
+cf_kv.list_kv_keys(namespace)
 
 # Set a key with metadata and expiration
-cf_kv.set_key_value('some_key_name', 'some_value', metadata, 'your_namespace', expiration_days)
+cf_kv.set_key_value('some_key_name', 'some_value', metadata, namespace, expiration_days)
 
 # Get a key
-cf_kv.get_key_value('some_key_name', 'your_namespace')
+cf_kv.get_key_value('some_key_name', namespace)
 
 # Get a key with metadata
-cf_kv.get_key_metadata('some_key_name', 'your_namespace')
+cf_kv.get_key_metadata('some_key_name', namespace)
 
 # Delete a key
-cf_kv.delete_key('some_key_name', 'your_namespace')
+cf_kv.delete_key('some_key_name', namespace)
 
 # Delete all keys in a namespace
-cf_kv.delete_all_keys('your_namespace')
+cf_kv.delete_all_keys(namespace)
 ```
 
 ## TODO

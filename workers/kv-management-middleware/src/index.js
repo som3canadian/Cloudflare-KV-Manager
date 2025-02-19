@@ -100,7 +100,10 @@ async function handleRequest(request) {
 	if (pathname === '/set') {
 		const value = url.searchParams.get('value')
 		const providedExpiration = url.searchParams.get('expiration')
-		const expiration = providedExpiration !== null ? parseInt(providedExpiration) : (DEFAULT_EXPIRATION_DAYS * 24 * 60 * 60)
+		let expiration = DEFAULT_EXPIRATION_DAYS * 24 * 60 * 60
+    if (providedExpiration !== null) {
+        expiration = parseInt(providedExpiration) * 24 * 60 * 60 || 0
+    }
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
@@ -111,34 +114,23 @@ async function handleRequest(request) {
 
 			// Set the metadata with timestamp
 			let fullMetadata = {
+				...(existingValue?.metadata || {}),
         ...metadata,
         timestamp: getTimestamp(),
-    }
-			if (!existingValue.value) {
-				fullMetadata = {
-					...fullMetadata,
-					creation_timestamp: getTimestamp(),
-				}
 			}
-			// Parse value as JSON if possible
-			let parsedValue
-			try {
-				parsedValue = JSON.parse(value)
-			} catch {
-				parsedValue = value
+			if (!existingValue || !existingValue.value) {
+				fullMetadata.creation_timestamp = getTimestamp()
 			}
 
-			// Set key with or without expiration
-			if (parseInt(providedExpiration) === 0) {
-				await MY_KV_NAMESPACE.put(key, value, {
-					metadata: fullMetadata,
-				})
-			} else {
-				await MY_KV_NAMESPACE.put(key, value, {
-					expirationTtl: expiration,
-					metadata: fullMetadata,
-				})
+			const putOptions = {
+				metadata: fullMetadata
 			}
+			if (expiration > 0) {
+				putOptions.expirationTtl = expiration
+			}
+
+			// Set the key
+			await MY_KV_NAMESPACE.put(key, value, putOptions)
 
 			// Get the key back to verify and return complete data
 			const { value: storedValue, metadata: storedMetadata } = await MY_KV_NAMESPACE.getWithMetadata(key)
