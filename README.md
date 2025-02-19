@@ -138,6 +138,8 @@ MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET = "<your-service-auth-client-secret>"
 
 ## Usage
 
+**Note:** metadata must be send in base64 format (curl and python library).
+
 ### Using with the middleware only
 
 ```bash
