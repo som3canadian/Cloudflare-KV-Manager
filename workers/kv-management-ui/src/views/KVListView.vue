@@ -244,20 +244,20 @@
         <p v-else class="deletion-status">{{ deletionStatus }}</p>
         <div class="modal-actions">
           <button
-            @click="deleteSelected"
-            class="delete-btn"
-            :disabled="!!deletionStatus"
-          >
-            <i class="material-icons">delete</i>
-            Delete
-          </button>
-          <button
             @click="showDeleteConfirm = false"
             class="cancel-btn"
             :disabled="!!deletionStatus"
           >
             <i class="material-icons">close</i>
             Cancel
+          </button>
+          <button
+            @click="deleteSelected"
+            class="delete-btn"
+            :disabled="!!deletionStatus"
+          >
+            <i class="material-icons">delete</i>
+            Delete
           </button>
         </div>
       </div>
@@ -276,20 +276,20 @@
         <p v-else class="deletion-status">{{ deletionStatus }}</p>
         <div class="modal-actions">
           <button
-            @click="deleteAll"
-            class="delete-btn"
-            :disabled="!!deletionStatus"
-          >
-            <i class="material-icons">delete_sweep</i>
-            Delete All
-          </button>
-          <button
             @click="showDeleteAllConfirm = false"
             class="cancel-btn"
             :disabled="!!deletionStatus"
           >
             <i class="material-icons">close</i>
             Cancel
+          </button>
+          <button
+            @click="deleteAll"
+            class="delete-btn"
+            :disabled="!!deletionStatus"
+          >
+            <i class="material-icons">delete_sweep</i>
+            Delete All
           </button>
         </div>
       </div>
@@ -385,10 +385,6 @@
           </div>
 
           <div class="modal-actions">
-            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
-              <i class="material-icons">save</i>
-              {{ isSubmitting ? 'Adding...' : 'Add Key' }}
-            </button>
             <button
               type="button"
               @click="cancelAdd"
@@ -397,6 +393,10 @@
             >
               <i class="material-icons">close</i>
               Cancel
+            </button>
+            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
+              <i class="material-icons">save</i>
+              {{ isSubmitting ? 'Adding...' : 'Add Key' }}
             </button>
           </div>
         </form>
@@ -407,7 +407,8 @@
     <div v-if="showModifyModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ modifyingKey.name }}</h2>
+          <!-- <h2>{{ modifyingKey.name }}</h2> -->
+          <h2>Modify Key</h2>
           <button @click="cancelModify" class="modal-close" title="Close">
             <i class="material-icons">close</i>
           </button>
@@ -417,6 +418,18 @@
             {{ deletionStatus }}
           </div>
           <div v-else>
+            <div class="form-group">
+              <label for="key">Key Name:</label>
+              <input
+                id="key"
+                v-model="modifyingKey.newName"
+                type="text"
+                required
+                class="form-input"
+                placeholder="Enter key name"
+              >
+            </div>
+
             <div class="form-group">
               <label for="value">Value:</label>
               <textarea
@@ -480,10 +493,6 @@
           </div>
 
           <div class="modal-actions">
-            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
-              <i class="material-icons">save</i>
-              {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
-            </button>
             <button
               type="button"
               @click="cancelModify"
@@ -492,6 +501,10 @@
             >
               <i class="material-icons">close</i>
               Cancel
+            </button>
+            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
+              <i class="material-icons">save</i>
+              {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
             </button>
           </div>
         </form>
@@ -977,6 +990,7 @@ export default {
 
       this.modifyingKey = {
         name: item.name,
+        newName: item.name,
         value: valueStr,
         expiration: expiration,
         metadata: metadataArray
@@ -1005,10 +1019,13 @@ export default {
           }
         }
 
-        // Create URL parameters
+        // If the key name has changed, we need to create a new key and delete the old one
+        const isKeyRenamed = this.modifyingKey.name !== this.modifyingKey.newName
+
+        // Create URL parameters for the new key
         const params = new URLSearchParams()
         params.append('namespace', this.selectedNamespace)
-        params.append('key', this.modifyingKey.name)
+        params.append('key', this.modifyingKey.newName)
         params.append('value', typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : parsedValue)
 
         // Add expiration if provided (convert days to seconds)
@@ -1021,6 +1038,7 @@ export default {
           params.append('metadata', btoa(JSON.stringify(metadata)))
         }
 
+        // Create the new key
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/set?${params.toString()}`, {
           headers: this.headers
         })
@@ -1035,16 +1053,32 @@ export default {
           throw new Error(result.message || 'Failed to modify key')
         }
 
+        // If the key was renamed, delete the old key
+        if (isKeyRenamed) {
+          const deleteParams = new URLSearchParams({
+            namespace: this.selectedNamespace,
+            key: this.modifyingKey.name
+          })
+
+          const deleteResponse = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/delete?${deleteParams.toString()}`, {
+            headers: this.headers
+          })
+
+          if (!deleteResponse.ok) {
+            throw new Error('Failed to delete old key after renaming')
+          }
+        }
+
         // Create the modified key data
         const modifiedKeyData = {
-          name: this.modifyingKey.name,
+          name: this.modifyingKey.newName,
           value: result.data.value,
           metadata: result.data.metadata,
           expiration: result.data.expiration
         }
 
         // Update the key in our local data immediately
-        const keyIndex = this.kvData.findIndex(k => k.name === modifiedKeyData.name)
+        const keyIndex = this.kvData.findIndex(k => k.name === this.modifyingKey.name)
         if (keyIndex !== -1) {
           // Create a new array with the updated item
           this.kvData = [
