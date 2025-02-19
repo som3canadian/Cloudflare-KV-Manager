@@ -212,12 +212,31 @@
     <div v-if="selectedItem" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ selectedItem.name }}</h2>
+          <div class="copy-wrapper">
+            <h2>{{ selectedItem.name }}</h2>
+            <button @click="copyToClipboard(selectedItem.name, 'key')" class="copy-btn" title="Copy Key">
+              <i class="material-icons" :class="{ 'check-icon': copiedStates['key'] }">
+                {{ copiedStates['key'] ? 'check' : 'content_copy' }}
+              </i>
+            </button>
+          </div>
           <button @click="selectedItem = null" class="modal-close" title="Close">
             <i class="material-icons">close</i>
           </button>
         </div>
         <div class="key-details">
+          <div class="detail-section">
+            <h3>Value:</h3>
+            <div class="pre-wrapper">
+              <button @click="copyToClipboard(formatContentForView(selectedItem.value), 'value')" class="pre-copy-btn" title="Copy">
+                <i class="material-icons" :class="{ 'check-icon': copiedStates['value'] }">
+                  {{ copiedStates['value'] ? 'check' : 'content_copy' }}
+                </i>
+              </button>
+              <pre>{{ formatValue(selectedItem) }}</pre>
+            </div>
+            <br />
+          </div>
           <div class="detail-section">
             <h3>Expiration:</h3>
             <div>{{ formatExpiration(selectedItem.expiration) }}</div>

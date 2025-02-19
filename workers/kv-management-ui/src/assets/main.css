@@ -578,15 +578,16 @@ textarea.form-input {
   font-size: 14px;
 }
 .detail-section pre {
-  background-color: var(--bg-primary);
-  padding: 1rem;
   border-radius: 6px;
   white-space: pre-wrap;
   word-wrap: break-word;
   font-family: monospace;
-  margin: 0.5rem 0;
   overflow-x: auto;
   font-size: 12px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  max-width: 500px;
 }
 
 /* Content View Modal */
@@ -670,13 +671,6 @@ textarea.form-input {
 
 .content-view .pre-wrapper {
   margin: 0;
-}
-
-/* Update detail section styles */
-.detail-section pre {
-  padding: 0;
-  margin: 0;
-  background: none;
 }
 
 .search-wrapper {
