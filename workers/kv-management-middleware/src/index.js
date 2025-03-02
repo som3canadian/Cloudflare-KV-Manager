@@ -100,9 +100,9 @@ async function handleRequest(request) {
 	if (pathname === '/set') {
 		const value = url.searchParams.get('value')
 		const providedExpiration = url.searchParams.get('expiration')
-		let expiration = DEFAULT_EXPIRATION_DAYS * 24 * 60 * 60
+		let expiration = DEFAULT_EXPIRATION_DAYS
     if (providedExpiration !== null) {
-        expiration = parseInt(providedExpiration) * 24 * 60 * 60 || 0
+        expiration = parseInt(providedExpiration) || 0
     }
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
@@ -118,8 +118,8 @@ async function handleRequest(request) {
         ...metadata,
         timestamp: getTimestamp(),
 			}
-			// Set creation_timestamp only for new keys or if it doesn't exist
-			if (!existingValue || !existingValue.value || !fullMetadata.creation_timestamp) {
+			// Set creation_timestamp only for new keys, not for existing keys without one
+			if (!existingValue || !existingValue.value) {
 				fullMetadata.creation_timestamp = getTimestamp()
 			}
 
