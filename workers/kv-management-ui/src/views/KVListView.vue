@@ -780,11 +780,23 @@ export default {
     },
     formatDate(timestamp) {
       if (!timestamp) return 'N/A'
-      return new Date(timestamp).toLocaleString()
+      const date = new Date(timestamp)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}h${minutes}`
     },
     formatExpiration(expiration) {
       if (!expiration) return 'Never'
-      return new Date(expiration * 1000).toLocaleString()
+      const date = new Date(expiration * 1000)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}h${minutes}`
     },
     formatExpirationDays(expiration) {
       if (!expiration) return 'Never'

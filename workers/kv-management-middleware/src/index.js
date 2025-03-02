@@ -118,7 +118,8 @@ async function handleRequest(request) {
         ...metadata,
         timestamp: getTimestamp(),
 			}
-			if (!existingValue || !existingValue.value) {
+			// Set creation_timestamp only for new keys or if it doesn't exist
+			if (!existingValue || !existingValue.value || !fullMetadata.creation_timestamp) {
 				fullMetadata.creation_timestamp = getTimestamp()
 			}
 
