@@ -2,6 +2,19 @@
   <div class="kv-list">
     <h1 class="kv-list-title">Cloudflare KV Manager</h1>
 
+    <!-- Notification component -->
+    <div v-if="notification.show" :class="['notification', `notification-${notification.type}`]">
+      <div class="notification-content">
+        <i class="material-icons notification-icon">
+          {{ notification.type === 'info' ? 'info' : notification.type === 'warning' ? 'warning' : 'error' }}
+        </i>
+        <span>{{ notification.message }}</span>
+      </div>
+      <button @click="notification.show = false" class="notification-close">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+
     <div class="controls">
       <select v-model="selectedNamespace" class="namespace-select">
         <option v-for="namespace in namespaces" :key="namespace" :value="namespace">{{ namespace }}</option>
@@ -250,7 +263,7 @@
                   {{ copiedStates['metadata'] ? 'check' : 'content_copy' }}
                 </i>
               </button>
-              <pre>{{ JSON.stringify(selectedItem.metadata, null, 2) }}</pre>
+              <pre>{{ formatMetadataWithSystemFields(selectedItem.metadata) }}</pre>
             </div>
           </div>
         </div>
@@ -383,14 +396,20 @@
                     type="text"
                     class="form-input"
                     placeholder="Key"
+                    :readonly="item.readOnly"
+                    :class="{ 'read-only': item.readOnly }"
+                    @input="validateMetadataKeyInput(item)"
                   >
                   <input
                     v-model="item.value"
                     type="text"
                     class="form-input"
                     placeholder="Value"
+                    :readonly="item.readOnly"
+                    :class="{ 'read-only': item.readOnly }"
                   >
                   <button
+                    v-if="!item.readOnly"
                     type="button"
                     @click="removeMetadataItem(index)"
                     class="remove-btn"
@@ -398,6 +417,9 @@
                   >
                     ×
                   </button>
+                  <div v-else class="system-field-indicator" title="Cannot modify system fields metadata">
+                    <i class="material-icons" style="font-size: 16px; color: #f39c12;">lock</i>
+                  </div>
                 </div>
               </div>
               <button
@@ -491,14 +513,20 @@
                     type="text"
                     class="form-input"
                     placeholder="Key"
+                    :readonly="item.readOnly"
+                    :class="{ 'read-only': item.readOnly }"
+                    @input="validateMetadataKeyInput(item)"
                   >
                   <input
                     v-model="item.value"
                     type="text"
                     class="form-input"
                     placeholder="Value"
+                    :readonly="item.readOnly"
+                    :class="{ 'read-only': item.readOnly }"
                   >
                   <button
+                    v-if="!item.readOnly"
                     type="button"
                     @click="removeModifyMetadataItem(index)"
                     class="remove-btn"
@@ -506,6 +534,9 @@
                   >
                     ×
                   </button>
+                  <div v-else class="system-field-indicator" title="Cannot modify system fields metadata">
+                    <i class="material-icons" style="font-size: 16px; color: #f39c12;">lock</i>
+                  </div>
                 </div>
               </div>
               <button
@@ -597,6 +628,12 @@ export default {
         value: '',
         expiration: '',
         metadata: []
+      },
+      systemFields: ['timestamp', 'creation_timestamp'],
+      notification: {
+        show: false,
+        message: '',
+        type: 'info' // 'info', 'warning', 'error'
       },
       copiedStates: {},
       viewingContent: null,
@@ -928,8 +965,10 @@ export default {
           // If not valid JSON, use as is (string)
         }
 
-        // Convert metadata array to object
+        // Start with a clean metadata object
         const metadata = {}
+
+        // Only include metadata items that have both key and value
         for (const item of this.newKey.metadata) {
           if (item.key && item.value) {
             metadata[item.key] = item.value
@@ -944,9 +983,8 @@ export default {
 
         // Add expiration if provided or explicitly set to 0
         if (this.newKey.expiration !== '') {
-          // Convert days to seconds, or use 0 for no expiration
-          const expirationSeconds = this.newKey.expiration === 0 ? 0 : this.newKey.expiration * 24 * 60 * 60
-          params.append('expiration', String(expirationSeconds))
+          //
+          params.append('expiration', String(this.newKey.expiration))
         }
 
         // Add metadata if provided
@@ -995,6 +1033,18 @@ export default {
         }
         this.showAddModal = false
 
+        // Show success notification
+        this.notification = {
+          show: true,
+          message: `Key "${newKeyData.name}" added successfully.`,
+          type: 'info'
+        }
+
+        // Auto-hide notification after 3 seconds
+        setTimeout(() => {
+          this.notification.show = false;
+        }, 3000);
+
       } catch (err) {
         this.error = `Error adding key: ${err.message}`
         console.error('Add key error:', err)
@@ -1009,10 +1059,28 @@ export default {
       }
     },
     addMetadataItem() {
-      this.newKey.metadata.push({ key: '', value: '' })
+      this.newKey.metadata.push({ key: '', value: '', readOnly: false })
     },
     removeMetadataItem(index) {
+      // Get the key that's being removed
+      const removedKey = this.newKey.metadata[index].key
+
+      // Remove the metadata item from the array
       this.newKey.metadata.splice(index, 1)
+
+      // Show notification if a key with a value was removed
+      if (removedKey) {
+        this.notification = {
+          show: true,
+          message: `Metadata field "${removedKey}" removed.`,
+          type: 'info'
+        }
+
+        // Auto-hide notification after 3 seconds
+        setTimeout(() => {
+          this.notification.show = false;
+        }, 3000);
+      }
     },
     modifyKey(item) {
       // Convert the value to a string for editing
@@ -1023,8 +1091,12 @@ export default {
         valueStr = String(item.value)
       }
 
-      // Convert metadata object to array format
-      const metadataArray = Object.entries(item.metadata || {}).map(([key, value]) => ({ key, value }))
+      // Convert all metadata to array format, marking system fields as read-only
+      const metadataArray = Object.entries(item.metadata || {}).map(([key, value]) => ({
+        key,
+        value,
+        readOnly: this.systemFields.includes(key)
+      }))
 
       // Calculate expiration in days if it exists
       const expiration = item.expiration ?
@@ -1053,11 +1125,25 @@ export default {
           // If not valid JSON, use as is (string)
         }
 
-        // Convert metadata array to object
+        // Get the original metadata from the item being modified
+        const originalItem = this.kvData.find(item => item.name === this.modifyingKey.name)
+        const originalMetadata = originalItem?.metadata || {}
+
+        // Create a completely new metadata object with only the current fields
+        // This ensures deleted fields are not included
         const metadata = {}
+
+        // Only include metadata items that are in the current form
         for (const item of this.modifyingKey.metadata) {
           if (item.key && item.value) {
             metadata[item.key] = item.value
+          }
+        }
+
+        // Preserve system fields
+        for (const field of this.systemFields) {
+          if (originalMetadata[field]) {
+            metadata[field] = originalMetadata[field]
           }
         }
 
@@ -1070,15 +1156,13 @@ export default {
         params.append('key', this.modifyingKey.newName)
         params.append('value', typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : parsedValue)
 
-        // Add expiration if provided (convert days to seconds)
+        // Add expiration if provided
         if (this.modifyingKey.expiration !== '') {
-          params.append('expiration', String(this.modifyingKey.expiration * 24 * 60 * 60))
+          params.append('expiration', String(this.modifyingKey.expiration))
         }
 
-        // Add metadata if provided
-        if (Object.keys(metadata).length > 0) {
-          params.append('metadata', btoa(JSON.stringify(metadata)))
-        }
+        // Add metadata if provided - always include metadata to overwrite existing
+        params.append('metadata', btoa(JSON.stringify(metadata)))
 
         // Create the new key
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/set?${params.toString()}`, {
@@ -1143,6 +1227,18 @@ export default {
         // Close modal
         this.showModifyModal = false
 
+        // Show success notification
+        this.notification = {
+          show: true,
+          message: `Key "${modifiedKeyData.name}" updated successfully.`,
+          type: 'info'
+        }
+
+        // Auto-hide notification after 3 seconds
+        setTimeout(() => {
+          this.notification.show = false;
+        }, 3000);
+
       } catch (err) {
         this.error = `Error modifying key: ${err.message}`
         console.error('Modify key error:', err)
@@ -1157,9 +1253,13 @@ export default {
       }
     },
     addModifyMetadataItem() {
-      this.modifyingKey.metadata.push({ key: '', value: '' })
+      this.modifyingKey.metadata.push({ key: '', value: '', readOnly: false })
     },
     removeModifyMetadataItem(index) {
+      // Get the key that's being removed
+      const removedKey = this.modifyingKey.metadata[index].key
+
+      // Remove the metadata item from the array
       this.modifyingKey.metadata.splice(index, 1)
     },
     copyToClipboard(text, id) {
@@ -1215,6 +1315,44 @@ export default {
     confirmDeleteSingle(item) {
       this.selectedKeys = [item.name]
       this.confirmDelete()
+    },
+    formatMetadataWithSystemFields(metadata) {
+      if (!metadata) return 'N/A'
+
+      // Create a formatted version of the metadata
+      const formattedMetadata = {}
+
+      // Process each metadata entry
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (this.systemFields.includes(key)) {
+          // For system fields, add a prefix to indicate they're system fields
+          formattedMetadata[`${key}`] = value
+        } else {
+          // For regular fields, keep as is
+          formattedMetadata[key] = value
+        }
+      })
+
+      // Return the formatted metadata as a JSON string
+      return JSON.stringify(formattedMetadata, null, 2)
+    },
+    validateMetadataKeyInput(item) {
+      if (this.systemFields.includes(item.key)) {
+        // Show notification
+        this.notification = {
+          show: true,
+          message: `"${item.key}" is a system field and cannot be modified. It will be automatically managed by the system.`,
+          type: 'warning'
+        }
+
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => {
+          this.notification.show = false;
+        }, 5000);
+
+        // Clear the input
+        item.key = '';
+      }
     },
   },
   async created() {

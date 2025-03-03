@@ -751,3 +751,103 @@ textarea.form-input {
   border: none;
   color: #fff;
 }
+
+.system-fields-note {
+  background-color: #2c2c2c;
+  border-left: 3px solid #f39c12;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  color: #ddd;
+  border-radius: 3px;
+}
+
+.system-field {
+  color: #f39c12;
+  font-style: italic;
+}
+
+.read-only {
+  background-color: #2c2c2c;
+  /* color: #f39c12; */
+  border: 1px solid #444;
+  cursor: not-allowed;
+}
+
+.system-field-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 450px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slide-in 0.3s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.notification-icon {
+  margin-right: 12px;
+  font-size: 20px;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 12px;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+.notification-info {
+  background-color: #2c2c2c;
+  color: #ecf0f1;
+  border-left: 4px solid #3beabc;
+}
+
+.notification-warning {
+  background-color: #2c2c2c;
+  color: #ecf0f1;
+  border-left: 4px solid #ffa801;
+}
+
+.notification-error {
+  background-color: #2c2c2c;
+  color: #ecf0f1;
+  border-left: 4px solid #ff0049;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
