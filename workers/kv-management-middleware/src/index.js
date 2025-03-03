@@ -104,6 +104,8 @@ async function handleRequest(request) {
     if (providedExpiration !== null) {
         expiration = parseInt(providedExpiration) || 0
     }
+		// convert days to seconds
+		expiration = expiration * 24 * 60 * 60
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
@@ -112,15 +114,17 @@ async function handleRequest(request) {
 			// Check if key already exists
 			const existingValue = await MY_KV_NAMESPACE.getWithMetadata(key)
 
-			// Set the metadata with timestamp
-			let fullMetadata = {
-				...(existingValue?.metadata || {}),
-        ...metadata,
-        timestamp: getTimestamp(),
-			}
-			// Set creation_timestamp only for new keys, not for existing keys without one
+			// Start with a clean metadata object or use the provided metadata
+			let fullMetadata = metadata ? { ...metadata } : {}
+
+			// Always set the timestamp
+			fullMetadata.timestamp = getTimestamp()
+
+			// Set creation_timestamp only for new keys, or preserve it for existing keys
 			if (!existingValue || !existingValue.value) {
 				fullMetadata.creation_timestamp = getTimestamp()
+			} else if (existingValue.metadata?.creation_timestamp) {
+				fullMetadata.creation_timestamp = existingValue.metadata.creation_timestamp
 			}
 
 			const putOptions = {

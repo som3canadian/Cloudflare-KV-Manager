@@ -10,12 +10,11 @@ this_kv_worker_custom_header = "<your-custom-header>"
 MIDDLEWARE_USE_ZERO_TRUST = False
 MIDDLEWARE_SERVICE_AUTH_CLIENT_ID = "<your-service-auth-client-id>"
 MIDDLEWARE_SERVICE_AUTH_CLIENT_SECRET = "<your-service-auth-client-secret>"
+### END CONFIGURATION ###
 
-default_expiration_days = 0
 default_metadata = {
     "timestamp": datetime.now().isoformat()
 }
-### CONFIGURATION ###
 
 # get base64 of the data
 def b64_encode_json(data: str) -> str:
@@ -67,7 +66,9 @@ def get_key_metadata(key, namespace):
     metadata = complete_response['data']['value']['metadata']
     return metadata
 
-def set_key_value(key, value, metadata=default_metadata, namespace=None, expiration=default_expiration_days):
+def set_key_value(key, value, metadata=default_metadata, namespace=None, expiration=None):
+    if expiration is None:
+        expiration = 0
     base64_metadata = b64_encode_json(metadata)
     endpoint = f"/set?key={key}&value={value}&expiration={expiration}&metadata={base64_metadata}&namespace={namespace}"
     return request_builder(endpoint, this_kv_worker_secret)
