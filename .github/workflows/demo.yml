@@ -21,18 +21,16 @@ jobs:
 
       - name: Setup Middleware Config
         run: |
-          echo "${{ secrets.MIDDLEWARE_CONFIG }}" > workers/kv-management-middleware/wrangler.json
+          echo "${{ secrets.MIDDLEWARE_CONFIG }}" | base64 -d > workers/kv-management-middleware/wrangler.json
 
       - name: Install Dependencies
         working-directory: ./workers/kv-management-middleware
         run: npm install && npm install -g wrangler
 
       - name: Deploy Middleware
+        working-directory: ./workers/kv-management-middleware
         run: |
-          cd workers/kv-management-middleware
           wrangler deploy
-          wrangler secret put WORKER_KV_SECRET --value ${{ secrets.WORKER_KV_SECRET }}
-          wrangler secret put TURNSTILE_SECRET_KEY --value ${{ secrets.TURNSTILE_SECRET_KEY }}
 
 
       # - name: Deploy Middleware
