@@ -851,3 +851,9 @@ textarea.form-input {
     opacity: 1;
   }
 }
+
+.turnstile-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}

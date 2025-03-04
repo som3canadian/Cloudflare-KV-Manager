@@ -1,2 +1,2 @@
-name = "kv-management-ui"
+name = "kv-management-ui-demo"
 pages_build_output_dir = "./dist"

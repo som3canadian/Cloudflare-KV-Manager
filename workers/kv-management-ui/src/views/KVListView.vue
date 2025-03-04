@@ -430,6 +430,11 @@
                 + Add Metadata Field
               </button>
             </div>
+
+            <!-- Turnstile Widget -->
+            <div class="form-group turnstile-container">
+              <div id="turnstile-widget" ref="turnstileWidget"></div>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -442,7 +447,7 @@
               <i class="material-icons">close</i>
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
+            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus || !turnstileToken">
               <i class="material-icons">save</i>
               {{ isSubmitting ? 'Adding...' : 'Add Key' }}
             </button>
@@ -547,6 +552,11 @@
                 + Add Metadata Field
               </button>
             </div>
+
+            <!-- Turnstile Widget for Modify Form -->
+            <div class="form-group turnstile-container">
+              <div id="turnstile-widget-modify" ref="turnstileWidgetModify"></div>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -559,7 +569,7 @@
               <i class="material-icons">close</i>
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus">
+            <button type="submit" class="submit-btn" :disabled="isSubmitting || !!deletionStatus || !turnstileTokenModify">
               <i class="material-icons">save</i>
               {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
             </button>
@@ -646,7 +656,10 @@ export default {
         [import.meta.env.VITE_APP_CUSTOM_HEADER]: import.meta.env.VITE_APP_WORKER_KV_SECRET
       } : {
         [import.meta.env.VITE_APP_CUSTOM_HEADER]: import.meta.env.VITE_APP_WORKER_KV_SECRET
-      }
+      },
+      turnstileToken: null,
+      turnstileTokenModify: null,
+      turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
     }
   },
   computed: {
@@ -751,6 +764,21 @@ export default {
     searchQuery() {
       // Reset to first page when searching
       this.currentPage = 1
+    },
+    // Watch for modal visibility changes to initialize Turnstile
+    showAddModal(newValue) {
+      if (newValue) {
+        this.$nextTick(() => {
+          this.initTurnstile()
+        })
+      }
+    },
+    showModifyModal(newValue) {
+      if (newValue) {
+        this.$nextTick(() => {
+          this.initTurnstile()
+        })
+      }
     }
   },
   methods: {
@@ -992,8 +1020,14 @@ export default {
           params.append('metadata', btoa(JSON.stringify(metadata)))
         }
 
+        // Create headers with Turnstile token
+        const requestHeaders = {
+          ...this.headers,
+          'cf-turnstile-response': this.turnstileToken
+        }
+
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/set?${params.toString()}`, {
-          headers: this.headers
+          headers: requestHeaders
         })
 
         if (!response.ok) {
@@ -1051,11 +1085,17 @@ export default {
       } finally {
         this.isSubmitting = false
         this.deletionStatus = null
+        this.turnstileToken = null
+        // Reset Turnstile widget safely
+        this.resetTurnstileWidget('turnstile-widget')
       }
     },
     cancelAdd() {
       if (!this.isSubmitting && !this.deletionStatus) {
         this.showAddModal = false
+        this.turnstileToken = null
+        // Reset Turnstile widget safely
+        this.resetTurnstileWidget('turnstile-widget')
       }
     },
     addMetadataItem() {
@@ -1164,9 +1204,15 @@ export default {
         // Add metadata if provided - always include metadata to overwrite existing
         params.append('metadata', btoa(JSON.stringify(metadata)))
 
+        // Create headers with Turnstile token
+        const requestHeaders = {
+          ...this.headers,
+          'cf-turnstile-response': this.turnstileTokenModify
+        }
+
         // Create the new key
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/set?${params.toString()}`, {
-          headers: this.headers
+          headers: requestHeaders
         })
 
         if (!response.ok) {
@@ -1187,7 +1233,7 @@ export default {
           })
 
           const deleteResponse = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/delete?${deleteParams.toString()}`, {
-            headers: this.headers
+            headers: requestHeaders
           })
 
           if (!deleteResponse.ok) {
@@ -1245,11 +1291,17 @@ export default {
       } finally {
         this.isSubmitting = false
         this.deletionStatus = null
+        this.turnstileTokenModify = null
+        // Reset Turnstile widget safely
+        this.resetTurnstileWidget('turnstile-widget-modify')
       }
     },
     cancelModify() {
       if (!this.isSubmitting && !this.deletionStatus) {
         this.showModifyModal = false
+        this.turnstileTokenModify = null
+        // Reset Turnstile widget safely
+        this.resetTurnstileWidget('turnstile-widget-modify')
       }
     },
     addModifyMetadataItem() {
@@ -1352,6 +1404,97 @@ export default {
 
         // Clear the input
         item.key = '';
+      }
+    },
+    // Initialize Turnstile widget
+    initTurnstile() {
+      // Load Turnstile script if not already loaded
+      if (!window.turnstile) {
+        const script = document.createElement('script')
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+        script.async = true
+        script.defer = true
+        document.head.appendChild(script)
+
+        script.onload = () => {
+          this.renderTurnstileWidgets()
+        }
+      } else {
+        this.renderTurnstileWidgets()
+      }
+    },
+
+    // Render Turnstile widgets when needed
+    renderTurnstileWidgets() {
+      if (window.turnstile) {
+        // For Add Key modal
+        if (this.showAddModal && this.$refs.turnstileWidget) {
+          try {
+            // Check if widget already exists and remove it first
+            this.resetTurnstileWidget('turnstile-widget')
+
+            // Render new widget
+            window.turnstile.render('#turnstile-widget', {
+              sitekey: this.turnstileSiteKey,
+              callback: (token) => {
+                this.turnstileToken = token
+              },
+              'expired-callback': () => {
+                this.turnstileToken = null
+              },
+              'error-callback': (error) => {
+                console.warn('Turnstile error:', error)
+                this.turnstileToken = null
+              }
+            })
+          } catch (error) {
+            console.error('Error rendering Turnstile widget:', error)
+          }
+        }
+
+        // For Modify Key modal
+        if (this.showModifyModal && this.$refs.turnstileWidgetModify) {
+          try {
+            // Check if widget already exists and remove it first
+            this.resetTurnstileWidget('turnstile-widget-modify')
+
+            // Render new widget
+            window.turnstile.render('#turnstile-widget-modify', {
+              sitekey: this.turnstileSiteKey,
+              callback: (token) => {
+                this.turnstileTokenModify = token
+              },
+              'expired-callback': () => {
+                this.turnstileTokenModify = null
+              },
+              'error-callback': (error) => {
+                console.warn('Turnstile error:', error)
+                this.turnstileTokenModify = null
+              }
+            })
+          } catch (error) {
+            console.error('Error rendering Turnstile widget:', error)
+          }
+        }
+      }
+    },
+
+    // Safely reset a Turnstile widget
+    resetTurnstileWidget(widgetId) {
+      if (window.turnstile) {
+        try {
+          // Get all widget IDs
+          const widgetIds = window.turnstile.getWidgetIds()
+
+          // Only reset if there are widgets
+          if (widgetIds && widgetIds.length > 0) {
+            // Try to reset by container ID first
+            window.turnstile.reset(`#${widgetId}`)
+          }
+        } catch (error) {
+          // Silently handle the error - this is expected in some cases
+          console.debug('Turnstile reset skipped:', error.message)
+        }
       }
     },
   },

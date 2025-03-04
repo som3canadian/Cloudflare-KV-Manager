@@ -54,6 +54,18 @@ async function handleRequest(request) {
 	const pathname = url.pathname
 	const key = url.searchParams.get('key')
 	const namespace = url.searchParams.get('namespace')
+	const ip = request.headers.get('cf-connecting-ip')
+
+	// Use Cloudflare's native Rate Limiting API
+	const rateLimiterKey = buildRateLimiterKey(pathname, ip)
+	// console.log('rateLimiterKey', rateLimiterKey)
+
+	// Check if the request is rate limited
+	const { success } = await KV_RATE_LIMITER.limit({ key: rateLimiterKey })
+
+	if (!success) {
+		return new Response(`429 Failure – rate limit exceeded for ${pathname}`, { status: 429 })
+	}
 
 	if (pathname === '/namespaces') {
 		const namespaces = Object.keys(self)
@@ -101,11 +113,30 @@ async function handleRequest(request) {
 		const value = url.searchParams.get('value')
 		const providedExpiration = url.searchParams.get('expiration')
 		let expiration = DEFAULT_EXPIRATION_DAYS
+		// Turnstile verification
+		const token = request.headers.get('cf-turnstile-response')
+		const turnstileResult = await verifyTurnstile(token, request)
+
+		if (!turnstileResult.success) {
+			const errorResponse = {
+				status: 'error',
+				message: 'Turnstile verification failed',
+				error: turnstileResult.error || 'Unknown error',
+				timestamp: getTimestamp(),
+			}
+			return new Response(JSON.stringify(errorResponse), {
+				status: 403,
+				headers: headers,
+			})
+		}
+		// End of Turnstile verification, continue with the request
     if (providedExpiration !== null) {
         expiration = parseInt(providedExpiration) || 0
     }
 		// convert days to seconds
-		expiration = expiration * 24 * 60 * 60
+		// hardcoded expiration for demo purposes (30 minutes)
+		// expiration = expiration * 24 * 60 * 60
+		expiration = 30 * 60
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
@@ -309,5 +340,81 @@ function checkAuthentication(request) {
 		return true
 	} else {
 		return false
+	}
+}
+
+// build rate limiter key
+function buildRateLimiterKey(action, ip) {
+	return `${action.replace(/[^a-zA-Z0-9_-]/g, '_')}:${ip}`
+}
+
+// Turnstile verification
+async function verifyTurnstile(token, request) {
+	// If no token is provided, verification fails
+	if (!token) {
+		console.error('Turnstile token is missing');
+		return {
+			success: false,
+			error: 'Missing token'
+		};
+	}
+
+	try {
+		// Get the client IP address from the request
+		const clientIP = request.headers.get('cf-connecting-ip') || '';
+
+		// Create the form data as URLSearchParams
+		const formData = new URLSearchParams();
+		formData.append('secret', TURNSTILE_SECRET_KEY);
+		formData.append('response', token);
+		formData.append('remoteip', clientIP);
+
+		// Make the verification request to Cloudflare
+		const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: formData
+		});
+
+		// Parse the response
+		const outcome = await response.json();
+
+		if (outcome.success) {
+			// Check if the challenge was solved recently
+			const challengeTs = new Date(outcome.challenge_ts).getTime();
+			const now = Date.now();
+			const fiveMinutesAgo = now - 5 * 60 * 1000;
+
+			if (challengeTs < fiveMinutesAgo) {
+				console.error('Turnstile challenge is too old');
+				return {
+					success: false,
+					error: 'Challenge expired'
+				};
+			}
+
+			return {
+				success: true
+			};
+		} else {
+			// Log the error codes for debugging
+			let errorMessage = 'Verification failed';
+			if (outcome['error-codes'] && outcome['error-codes'].length > 0) {
+				console.error('Turnstile error codes:', outcome['error-codes']);
+				errorMessage = outcome['error-codes'].join(', ');
+			}
+			return {
+				success: false,
+				error: errorMessage
+			};
+		}
+	} catch (error) {
+		console.error('Turnstile verification error:', error);
+		return {
+			success: false,
+			error: error.message || 'Internal error'
+		};
 	}
 }
