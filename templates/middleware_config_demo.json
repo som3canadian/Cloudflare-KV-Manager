@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kv-management-middleware-demo",
+  "main": "src/index.js",
+  "account_id": "<your-account-id>",
+  "compatibility_date": "2025-01-29",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": true
+    }
+  },
+  "vars": {
+    "DEFAULT_EXPIRATION_DAYS": 7,
+    "CUSTOM_HEADER": "<your-custom-header>",
+    "TURNSTILE_SITE_KEY": "<your-turnstile-site-key>"
+  },
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "KV_RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1005",
+        "simple": {
+          "limit": 30,
+          "period": 60
+        }
+      }
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    },
+    {
+      "binding": "<your-kv-namespace-name>",
+      "id": "<your-kv-namespace-id>"
+    }
+  ]
+}

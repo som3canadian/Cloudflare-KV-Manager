@@ -4,6 +4,16 @@
 
 A more complete and simple solution for managing Cloudflare KV storage. One stop shop for managing your KV namespaces 🔥.
 
+## Demo
+
+You can see the demo of the UI [here](https://kv-demo.somecanadian.com/).
+
+Things to note about the demo (not present if you deploy your own):
+
+- Hardcoded expiration of 30 minutes for demo purposes. All keys created will be deleted after 30 minutes.
+- [Rate limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) is enabled for the demo.
+- Turnstile is enabled for the `set` operation.
+
 ## Features
 
 - Comes with a small python library for easy integration 🐍

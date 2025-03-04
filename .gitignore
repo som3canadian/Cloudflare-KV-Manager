@@ -1,6 +1,8 @@
 .DS_Store
 **/wrangler.json
+**/*_copy.*
 **/.env
+**/.env_copy
 test.py
 **/.vscode
 **/__pycache__
