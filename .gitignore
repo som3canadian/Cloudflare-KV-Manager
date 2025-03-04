@@ -5,3 +5,4 @@ test.py
 **/.vscode
 **/__pycache__
 lib/cf_kv_copy.py
+note.txt
