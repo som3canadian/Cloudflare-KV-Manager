@@ -14,21 +14,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Middleware Config
+        run: |
+          echo "${{ secrets.MIDDLEWARE_CONFIG }}" > workers/kv-management-middleware/wrangler.json
+
       - name: Deploy Middleware
         uses: cloudflare/wrangler-action@3.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./workers/kv-management-middleware
-          preCommands: |
-            echo "$MIDDLEWARE_CONFIG" > wrangler.json
           secrets: |
             WORKER_KV_SECRET
             TURNSTILE_SECRET_KEY
         env:
           WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-          MIDDLEWARE_CONFIG: ${{ secrets.MIDDLEWARE_CONFIG }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
