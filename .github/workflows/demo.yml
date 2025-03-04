@@ -30,10 +30,10 @@ jobs:
       - name: Deploy Middleware
         working-directory: ./workers/kv-management-middleware
         run: |
-          wrangler deploy
+          wrangler deploy > /dev/null 2>&1
+          echo "${{ secrets.WORKER_KV_SECRET }}" | wrangler secret put WORKER_KV_SECRET
+          echo "${{ secrets.TURNSTILE_SECRET_KEY }}" | wrangler secret put TURNSTILE_SECRET_KEY
         env:
-          WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
