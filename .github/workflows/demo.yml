@@ -12,7 +12,7 @@ jobs:
     name: Deploy
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Deploy Middleware
         uses: cloudflare/wrangler-action@3.0.0
@@ -20,7 +20,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./workers/kv-management-middleware
-          command: "deploy src/index.js"
+          command: deploy src/index.js
           secrets: |
             WORKER_KV_SECRET
             TURNSTILE_SECRET_KEY
