@@ -37,30 +37,20 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-
-      # - name: Deploy Middleware
-      #   uses: cloudflare/wrangler-action@3.0.0
-      #   with:
-      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      #     workingDirectory: ./workers/kv-management-middleware
-      #     secrets: |
-      #       WORKER_KV_SECRET
-      #       TURNSTILE_SECRET_KEY
-      #   env:
-      #     WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
-      #     TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-
       - name: Install Dependencies
         working-directory: ./workers/kv-management-ui
-        run: npm install
-      - name: Build Project
-        run: npm run build
+        run: npm install && npm install -g wrangler
+
+      - name: Build and Deploy UI
         working-directory: ./workers/kv-management-ui
-      - name: Deploy UI
-        uses: cloudflare/wrangler-action@3.0.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./workers/kv-management-ui
-          command: "pages deploy --directory=dist --project-name=kv-management-ui-demo"
+        run: |
+          echo "VITE_APP_WORKER_KV_SECRET=${{ secrets.WORKER_KV_SECRET }}" > .env
+          echo "VITE_APP_WORKER_URL=https://kv-management-middleware-demo.someworkers.workers.dev" >> .env
+          echo "VITE_APP_CUSTOM_HEADER=X-Custom-Auth" >> .env
+          echo "VITE_APP_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
+          echo "VITE_MIDDLEWARE_USE_ZERO_TRUST=false" >> .env
+          npm run build
+          wrangler pages deploy --directory=dist --project-name=kv-management-ui-demo > /dev/null 2>&1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
