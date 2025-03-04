@@ -32,7 +32,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./workers/kv-management-middleware
-          command: "deploy --config=./wrangler.json"
           # secrets: |
           #   WORKER_KV_SECRET
           #   TURNSTILE_SECRET_KEY
