@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Dependencies
         working-directory: ./workers/kv-management-middleware
-        run: npm install && ls -la
+        run: npm install && npm install -g wrangler
 
       - name: Deploy Middleware
         run: |
