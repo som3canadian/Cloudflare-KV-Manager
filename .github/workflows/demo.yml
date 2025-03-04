@@ -31,6 +31,11 @@ jobs:
         working-directory: ./workers/kv-management-middleware
         run: |
           wrangler deploy
+        env:
+          WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 
       # - name: Deploy Middleware
