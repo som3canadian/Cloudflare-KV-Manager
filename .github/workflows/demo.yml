@@ -14,10 +14,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
       - name: Setup Middleware Config
         run: |
           echo "${{ secrets.MIDDLEWARE_CONFIG }}" > workers/kv-management-middleware/wrangler.json
 
+      - name: Install Dependencies
+        working-directory: ./workers/kv-management-middleware
+        run: npm install && ls -la
       - name: Deploy Middleware
         uses: cloudflare/wrangler-action@3.0.0
         with:
@@ -31,10 +39,6 @@ jobs:
           WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
       - name: Install Dependencies
         working-directory: ./workers/kv-management-ui
         run: npm install
