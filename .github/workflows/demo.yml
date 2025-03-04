@@ -20,13 +20,15 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./workers/kv-management-middleware
-          command: deploy src/index.js
+          preCommands: |
+            echo "$MIDDLEWARE_CONFIG" > wrangler.json
           secrets: |
             WORKER_KV_SECRET
             TURNSTILE_SECRET_KEY
         env:
           WORKER_KV_SECRET: ${{ secrets.WORKER_KV_SECRET }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          MIDDLEWARE_CONFIG: ${{ secrets.MIDDLEWARE_CONFIG }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
