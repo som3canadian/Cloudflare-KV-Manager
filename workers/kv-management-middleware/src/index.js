@@ -69,13 +69,14 @@ async function handleRequest(request) {
 	// console.log('rateLimiterKey', rateLimiterKey)
 
 	// Check if the request is rate limited
-	const { success } = await KV_RATE_LIMITER.limit({ key: ip })
-	// let success;
-	// if (pathname === '/list') {
-	// 	success = await KV_LIST_RATE_LIMITER.limit({ key: ip })
-	// } else {
-	// 	success = await KV_RATE_LIMITER.limit({ key: ip })
-	// }
+	// const { success } = await KV_RATE_LIMITER.limit({ key: ip })
+	let success;
+	if (pathname === '/list') {
+		success = await KV_LIST_RATE_LIMITER.limit({ key: rateLimiterKey })
+	}
+	if (pathname !== '/list') {
+		success = await KV_RATE_LIMITER.limit({ key: rateLimiterKey })
+	}
 
 	if (!success) {
 		await rate_limiting_kv.put(ip, "blocked", {
