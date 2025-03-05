@@ -290,6 +290,18 @@ async function handleRequest(request) {
 		})
 	} else if (pathname === '/get') {
 		if (key) {
+			// check if namespace is hidden
+			if (hiddenNamespaces.includes(namespace)) {
+				const errorResponse = {
+					status: 'error',
+					message: 'Namespace not found',
+					timestamp: getTimestamp(),
+				}
+				return new Response(JSON.stringify(errorResponse), {
+					status: 404,
+					headers: headers,
+				})
+			}
 			const value = await MY_KV_NAMESPACE.getWithMetadata(key)
 			if (value !== null) {
 				const response = {
@@ -331,6 +343,18 @@ async function handleRequest(request) {
 			const listOptions = { limit }
 			if (cursor) {
 				listOptions.cursor = cursor
+			}
+			// check if namespace is hidden
+			if (hiddenNamespaces.includes(namespace)) {
+				const errorResponse = {
+					status: 'error',
+					message: 'Namespace not found',
+					timestamp: getTimestamp(),
+				}
+				return new Response(JSON.stringify(errorResponse), {
+					status: 404,
+					headers: headers,
+				})
 			}
 			const listResult = await MY_KV_NAMESPACE.list(listOptions)
 
