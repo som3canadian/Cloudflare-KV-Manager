@@ -50,7 +50,8 @@ jobs:
           echo "VITE_APP_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
           echo "VITE_MIDDLEWARE_USE_ZERO_TRUST=false" >> .env
           npm run build
-          wrangler pages deploy ./dist --branch=demo
+          wrangler pages deploy ./dist
+          wrangler pages publish ./dist --branch=demo
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
