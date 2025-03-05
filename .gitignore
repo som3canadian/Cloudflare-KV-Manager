@@ -1,7 +1,10 @@
 .DS_Store
 **/wrangler.json
+**/*_copy.*
 **/.env
+**/.env_copy
 test.py
 **/.vscode
 **/__pycache__
 lib/cf_kv_copy.py
+note.txt
