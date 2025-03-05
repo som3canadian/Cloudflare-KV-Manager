@@ -45,7 +45,7 @@ jobs:
         working-directory: ./workers/kv-management-ui
         run: |
           echo "VITE_APP_WORKER_KV_SECRET=${{ secrets.WORKER_KV_SECRET }}" > .env
-          echo "VITE_APP_WORKER_URL=https://kv-management-middleware-demo.someworkers.workers.dev" >> .env
+          echo "VITE_APP_WORKER_URL=${{ secrets.WORKER_URL }}" >> .env
           echo "VITE_APP_CUSTOM_HEADER=X-Custom-Auth" >> .env
           echo "VITE_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
           echo "VITE_MIDDLEWARE_USE_ZERO_TRUST=false" >> .env
