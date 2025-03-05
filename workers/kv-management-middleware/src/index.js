@@ -6,6 +6,12 @@ function getTimestamp() {
 	return new Date().toISOString();
 }
 
+// Function to check if a key is protected from modification or deletion
+function isProtectedKey(key) {
+	const protectedKeys = ['random_content', 'random_content_two'];
+	return protectedKeys.includes(key);
+}
+
 async function handleRequest(request) {
 	// Helper function for consistent headers
 	const headers = {
@@ -64,7 +70,7 @@ async function handleRequest(request) {
 	const { success } = await KV_RATE_LIMITER.limit({ key: rateLimiterKey })
 
 	if (!success) {
-		return new Response(`429 Failure – rate limit exceeded for ${pathname}`, { status: 429 })
+		return new Response(`429 Failure - rate limit exceeded for ${pathname}`, { status: 429 })
 	}
 
 	if (pathname === '/namespaces') {
@@ -142,6 +148,19 @@ async function handleRequest(request) {
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
 
 		if (key && value) {
+			// Check if key is protected
+			if (isProtectedKey(key)) {
+				const errorResponse = {
+					status: 'success',
+					message: `The key "${key}" is protected and cannot be modified`,
+					timestamp: getTimestamp(),
+				}
+				return new Response(JSON.stringify(errorResponse), {
+					status: 200,
+					headers: headers,
+				})
+			}
+
 			// Check if key already exists
 			const existingValue = await MY_KV_NAMESPACE.getWithMetadata(key)
 
@@ -200,6 +219,19 @@ async function handleRequest(request) {
 		}
 	} else if (pathname === '/delete') {
 		if (key) {
+			// Check if key is protected
+			if (isProtectedKey(key)) {
+				const errorResponse = {
+					status: 'success',
+					message: `The key "${key}" is protected and cannot be deleted`,
+					timestamp: getTimestamp(),
+				}
+				return new Response(JSON.stringify(errorResponse), {
+					status: 200,
+					headers: headers,
+				})
+			}
+
 			await MY_KV_NAMESPACE.delete(key)
 			const response = {
 				status: 'success',
@@ -226,12 +258,15 @@ async function handleRequest(request) {
 		// loop through all keys in the namespace and delete them
 		const listResult = await MY_KV_NAMESPACE.list()
 		for (const key of listResult.keys) {
-			await MY_KV_NAMESPACE.delete(key.name)
+			// Skip protected keys during delete_all operation
+			if (!isProtectedKey(key.name)) {
+				await MY_KV_NAMESPACE.delete(key.name)
+			}
 		}
 		const response = {
 			status: 'success',
-			message: `All keys deleted in namespace ${namespace}`,
-			data: { 'message': 'All keys deleted in namespace ' + namespace },
+			message: `All non-protected keys deleted in namespace ${namespace}`,
+			data: { 'message': 'All non-protected keys deleted in namespace ' + namespace },
 			timestamp: getTimestamp(),
 		}
 		return new Response(JSON.stringify(response), {
