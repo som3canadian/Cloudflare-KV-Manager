@@ -61,7 +61,7 @@ async function handleRequest(request) {
 	const key = url.searchParams.get('key')
 	const namespace = url.searchParams.get('namespace')
 	const ip = request.headers.get('cf-connecting-ip')
-	const cooling_period = 10 * 60 // 10 minutes
+	const cooling_period = 2 * 60 // 2 minutes
 	const timestamp = getTimestamp()
 
 	// Use Cloudflare's native Rate Limiting API

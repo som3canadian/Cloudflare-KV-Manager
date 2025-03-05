@@ -24,16 +24,7 @@
         "type": "ratelimit",
         "namespace_id": "1005",
         "simple": {
-          "limit": 30,
-          "period": 60
-        }
-      },
-      {
-        "name": "KV_LIST_RATE_LIMITER",
-        "type": "ratelimit",
-        "namespace_id": "1006",
-        "simple": {
-          "limit": 60,
+          "limit": 45,
           "period": 60
         }
       }
