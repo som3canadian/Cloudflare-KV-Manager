@@ -78,9 +78,11 @@ async function handleRequest(request) {
 		return new Response(`429 Failure - rate limit exceeded for ${pathname}`, { status: 429 })
 	}
 
+	const hiddenNamespaces = HIDDEN_NAMESPACES
 	if (pathname === '/namespaces') {
 		const namespaces = Object.keys(self)
 			.filter(key => typeof self[key] === 'object' && self[key]?.list instanceof Function)
+			.filter(key => !hiddenNamespaces.includes(key))
 
 		const response = {
 			status: 'success',
