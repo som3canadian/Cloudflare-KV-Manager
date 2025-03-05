@@ -8,7 +8,7 @@ function getTimestamp() {
 
 // Function to check if a key is protected from modification or deletion
 function isProtectedKey(key) {
-	const protectedKeys = ['random_content', 'mykey'];
+	const protectedKeys = ['random_content', 'mykey', 'random_content_two'];
 	return protectedKeys.includes(key);
 }
 
@@ -145,9 +145,9 @@ async function handleRequest(request) {
         expiration = parseInt(providedExpiration) || 0
     }
 		// convert days to seconds
-		expiration = expiration * 24 * 60 * 60
+		// expiration = expiration * 24 * 60 * 60
 		// hardcoded expiration for demo purposes (30 minutes)
-		// expiration = 30 * 60
+		expiration = 30 * 60
 		const b64encoded_metadata = url.searchParams.get('metadata')
 		const temp_metadata = b64encoded_metadata && atob(b64encoded_metadata)
 		const metadata = temp_metadata && JSON.parse(temp_metadata)
