@@ -70,7 +70,7 @@ async function handleRequest(request) {
 
 	// Check if the request is rate limited
 	// const { success } = await KV_RATE_LIMITER.limit({ key: ip })
-	let success;
+	let success = false
 	if (pathname === '/list') {
 		success = await KV_LIST_RATE_LIMITER.limit({ key: rateLimiterKey })
 	}
