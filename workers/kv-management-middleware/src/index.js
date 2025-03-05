@@ -153,6 +153,10 @@ async function handleRequest(request) {
 				const errorResponse = {
 					status: 'success',
 					message: `The key "${key}" is protected and cannot be modified`,
+					data: {
+						key,
+						protected: true
+					},
 					timestamp: getTimestamp(),
 				}
 				return new Response(JSON.stringify(errorResponse), {
@@ -223,7 +227,11 @@ async function handleRequest(request) {
 			if (isProtectedKey(key)) {
 				const errorResponse = {
 					status: 'success',
-					message: `The key "${key}" is protected and cannot be deleted`,
+					message: `The key "${key}" is protected and cannot be modified`,
+					data: {
+						key,
+						protected: true
+					},
 					timestamp: getTimestamp(),
 				}
 				return new Response(JSON.stringify(errorResponse), {
