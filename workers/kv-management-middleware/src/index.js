@@ -61,6 +61,8 @@ async function handleRequest(request) {
 	const key = url.searchParams.get('key')
 	const namespace = url.searchParams.get('namespace')
 	const ip = request.headers.get('cf-connecting-ip')
+	const cooling_period = 10 * 60 // 10 minutes
+	const timestamp = getTimestamp()
 
 	// Use Cloudflare's native Rate Limiting API
 	const rateLimiterKey = buildRateLimiterKey(pathname, ip)
@@ -75,7 +77,19 @@ async function handleRequest(request) {
 	}
 
 	if (!success) {
-		return new Response(`429 Failure - rate limit exceeded for ${pathname}`, { status: 429 })
+		await rate_limiting_kv.put(ip, "blocked", {
+			expirationTtl: cooling_period,
+			metadata: {
+				timestamp: timestamp
+			}
+		});
+		return new Response('Rate limit exceeded', { status: 429 })
+	}
+
+	// check if ip is blocked
+	const blocked = await rate_limiting_kv.get(ip)
+	if (blocked) {
+		return new Response('Rate limit exceeded, wait a few minutes before trying again', { status: 429 })
 	}
 
 	const hiddenNamespaces = HIDDEN_NAMESPACES
@@ -230,6 +244,18 @@ async function handleRequest(request) {
 		}
 	} else if (pathname === '/delete') {
 		if (key) {
+			// check if namespace is hidden
+			if (hiddenNamespaces.includes(namespace)) {
+				const errorResponse = {
+					status: 'error',
+					message: 'Namespace not found',
+					timestamp: getTimestamp(),
+				}
+				return new Response(JSON.stringify(errorResponse), {
+					status: 404,
+					headers: headers,
+				})
+			}
 			// Check if key is protected
 			if (isProtectedKey(key)) {
 				const errorResponse = {
@@ -270,6 +296,18 @@ async function handleRequest(request) {
 			})
 		}
 	} else if (pathname === '/delete_all') {
+		// check if namespace is hidden
+		if (hiddenNamespaces.includes(namespace)) {
+			const errorResponse = {
+				status: 'error',
+				message: 'Namespace not found',
+				timestamp: getTimestamp(),
+			}
+			return new Response(JSON.stringify(errorResponse), {
+				status: 404,
+				headers: headers,
+			})
+		}
 		// loop through all keys in the namespace and delete them
 		const listResult = await MY_KV_NAMESPACE.list()
 		for (const key of listResult.keys) {
@@ -415,6 +453,10 @@ function checkAuthentication(request) {
 	} else {
 		return false
 	}
+}
+
+function getTimestamp() {
+	return new Date().toISOString();
 }
 
 // build rate limiter key
