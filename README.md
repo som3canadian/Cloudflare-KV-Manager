@@ -13,6 +13,7 @@ Things to note about the demo (not present if you deploy your own):
 - Hardcoded expiration of 30 minutes for demo purposes.
 - [Rate limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) is enabled for the demo.
 - Turnstile(captcha) is enabled for the `set` operation (adding or modifying a key).
+- Demo version is on the `demo` branch.
 
 ## Features
 
