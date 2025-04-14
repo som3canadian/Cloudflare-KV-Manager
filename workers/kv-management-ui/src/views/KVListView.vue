@@ -182,7 +182,7 @@
             `Showing ${kvData.length} keys${hasMoreData ? '' : ''}`
           }}
         </span>
-        <div class="pagination" v-if="!searchQuery">
+        <div class="pagination">
           <button
             @click="fetchData(true)"
             :disabled="loading || currentPage === 1"
@@ -774,11 +774,15 @@ export default {
       try {
         const params = new URLSearchParams({
           namespace: this.selectedNamespace,
-          limit: this.searchQuery ? '2000' : String(this.pageSize)  // search limit is 2000
+          limit: String(this.pageSize)  // Use pageSize consistently for both search and normal listing
         })
 
-        if (this.cursor && !resetData && !this.searchQuery) {
+        if (this.cursor && !resetData) {
           params.append('cursor', this.cursor)
+        }
+
+        if (this.searchQuery) {
+          params.append('search', this.searchQuery.toLowerCase())
         }
 
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/list?${params.toString()}`, {
@@ -820,12 +824,12 @@ export default {
 
           if (resetData) {
             this.kvData = filteredKeys
-          } else if (!this.searchQuery) {  // Only append if not searching
+          } else {
             this.kvData = [...this.kvData, ...filteredKeys]
           }
 
-          this.cursor = this.searchQuery ? null : data.data.cursor  // Don't store cursor when searching
-          this.hasMoreData = this.searchQuery ? false : !data.data.list_complete  // No pagination when searching
+          this.cursor = data.data.cursor
+          this.hasMoreData = !data.data.list_complete
 
           // Remove pending keys that now exist in server data
           for (const key of validKeys) {
