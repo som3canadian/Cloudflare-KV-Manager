@@ -243,11 +243,13 @@ async function handleRequest(request) {
 			})
 		}
 	} else if (pathname === '/list') {
-		const limit = parseInt(url.searchParams.get('limit')) || 1000
-		const cursor = url.searchParams.get('cursor') || undefined
+		const limit = parseInt(url.searchParams.get('limit')) || 100
+		const cursor = url.searchParams.get('cursor')
 
 		try {
-			const listOptions = { limit }
+			const listOptions = {
+				limit: Math.min(limit, 1000)
+			}
 			if (cursor) {
 				listOptions.cursor = cursor
 			}

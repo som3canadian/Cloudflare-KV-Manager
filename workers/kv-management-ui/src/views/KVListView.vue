@@ -177,39 +177,35 @@
 
       <div class="table-footer">
         <span class="total-keys">
-          Total Keys: {{ combinedData.length }}
+          {{ searchQuery ?
+            `Found ${kvData.length} matching keys` :
+            `Showing ${kvData.length} keys${hasMoreData ? '' : ''}`
+          }}
         </span>
-        <div class="pagination">
+        <div class="pagination" v-if="!searchQuery">
           <button
-            @click="currentPage = 1"
-            :disabled="currentPage === 1"
+            @click="fetchData(true)"
+            :disabled="loading || currentPage === 1"
             class="page-btn"
           >
             First
           </button>
           <button
-            @click="currentPage--"
-            :disabled="currentPage === 1"
+            @click="fetchPreviousPage"
+            :disabled="loading || currentPage === 1"
             class="page-btn"
           >
             Previous
           </button>
           <span class="page-info">
-            Page {{ currentPage }} of {{ totalPages }}
+            Page {{ currentPage }}
           </span>
           <button
-            @click="currentPage++"
-            :disabled="currentPage === totalPages"
+            @click="fetchNextPage"
+            :disabled="loading || !hasMoreData"
             class="page-btn"
           >
             Next
-          </button>
-          <button
-            @click="currentPage = totalPages"
-            :disabled="currentPage === totalPages"
-            class="page-btn"
-          >
-            Last
           </button>
           <select v-model="pageSize" class="page-size-select">
             <option :value="10">10 per page</option>
@@ -606,6 +602,7 @@ export default {
       loading: false,
       error: null,
       cursor: null,
+      hasMoreData: true,
       selectedNamespace: localStorage.getItem('selectedNamespace') || '',
       selectedItem: null,
       selectedKeys: [],
@@ -742,15 +739,21 @@ export default {
   watch: {
     selectedNamespace(newValue) {
       localStorage.setItem('selectedNamespace', newValue)
+      this.cursor = null
+      this.hasMoreData = true
       this.fetchData()
     },
     pageSize() {
-      // Reset to first page when changing page size
-      this.currentPage = 1
+      this.cursor = null
+      this.hasMoreData = true
+      this.fetchData()
     },
     searchQuery() {
       // Reset to first page when searching
       this.currentPage = 1
+      this.cursor = null
+      this.hasMoreData = true
+      this.fetchData()
     }
   },
   methods: {
@@ -763,15 +766,20 @@ export default {
       this.error = null
 
       if (resetData) {
-        this.currentPage = 1 // Only reset page when explicitly requested
+        this.currentPage = 1
         this.kvData = []
+        this.cursor = null
       }
 
       try {
         const params = new URLSearchParams({
           namespace: this.selectedNamespace,
-          limit: '1000'
+          limit: this.searchQuery ? '2000' : String(this.pageSize)  // search limit is 2000
         })
+
+        if (this.cursor && !resetData && !this.searchQuery) {
+          params.append('cursor', this.cursor)
+        }
 
         const response = await fetch(`${import.meta.env.VITE_APP_WORKER_URL}/list?${params.toString()}`, {
           headers: this.headers
@@ -782,7 +790,42 @@ export default {
         if (data.status === 'success') {
           // Filter out keys with null values
           const validKeys = data.data.keys.filter(key => key.value !== null)
-          this.kvData = validKeys
+
+          let filteredKeys = validKeys
+          if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase()
+            filteredKeys = validKeys.filter(item => {
+              // Search in key name
+              if (item.name.toLowerCase().includes(query)) return true
+
+              // Search in value
+              let valueStr
+              try {
+                valueStr = typeof item.value === 'object' ?
+                  JSON.stringify(item.value) : String(item.value)
+              } catch {
+                valueStr = String(item.value)
+              }
+              if (valueStr.toLowerCase().includes(query)) return true
+
+              // Search in metadata
+              if (item.metadata) {
+                const metadataStr = JSON.stringify(item.metadata).toLowerCase()
+                if (metadataStr.includes(query)) return true
+              }
+
+              return false
+            })
+          }
+
+          if (resetData) {
+            this.kvData = filteredKeys
+          } else if (!this.searchQuery) {  // Only append if not searching
+            this.kvData = [...this.kvData, ...filteredKeys]
+          }
+
+          this.cursor = this.searchQuery ? null : data.data.cursor  // Don't store cursor when searching
+          this.hasMoreData = this.searchQuery ? false : !data.data.list_complete  // No pagination when searching
 
           // Remove pending keys that now exist in server data
           for (const key of validKeys) {
@@ -1352,6 +1395,20 @@ export default {
 
         // Clear the input
         item.key = '';
+      }
+    },
+    // Add new pagination methods
+    async fetchNextPage() {
+      if (this.hasMoreData && !this.loading) {
+        this.currentPage++
+        await this.fetchData(false)
+      }
+    },
+    async fetchPreviousPage() {
+      if (this.currentPage > 1 && !this.loading) {
+        this.currentPage--
+        this.cursor = null // Reset cursor to get fresh data
+        await this.fetchData(true)
       }
     },
   },
