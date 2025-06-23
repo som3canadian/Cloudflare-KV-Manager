@@ -8,3 +8,4 @@ test.py
 **/__pycache__
 lib/cf_kv_copy.py
 note.txt
+test.sh

@@ -20,7 +20,7 @@ Things to note about the demo (not present if you deploy your own):
 - Comes with a small python library for easy integration 🐍
 - Can be used without the UI
 - Use as many namespaces as you want 🔄
-- Search for keys in a namespace (search by key, value, or metadata) 🔍
+- Search for keys in a namespace 🔍
 - Add, edit, and delete keys 📝
 - Supports view / edit metadata and expiration fields 👁️
 - Delete all keys in a namespace 🗑️
