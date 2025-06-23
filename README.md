@@ -6,6 +6,8 @@ A more complete and simple solution for managing Cloudflare KV storage. One stop
 
 ## Demo
 
+Note: Demo branch is not updated with the latest changes from the main branch.
+
 You can see the demo of the UI [here](https://kv-demo.somecanadian.com/).
 
 Things to note about the demo (not present if you deploy your own):
