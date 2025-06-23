@@ -66,9 +66,9 @@ cp templates/ui_config.env workers/kv-management-ui/.env
 cd workers/kv-management-middleware
 # modify the wrangler.json file
 npm install
-wrangler deploy
+npx wrangler deploy
 # set the WORKER_KV_SECRET
-wrangler secret put WORKER_KV_SECRET
+npx wrangler secret put WORKER_KV_SECRET
 
 # deploy the ui
 cd ../kv-management-ui
@@ -158,6 +158,9 @@ curl -X GET "https://<your-worker-url>/namespaces" -H "X-Custom-Auth: <your-secr
 # List all keys in a namespace
 curl -X GET "https://<your-worker-url>/list?namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
 
+# Search for keys in a namespace
+curl -X GET "https://<your-worker-url>/search?namespace=<namespace>&search=<search-query>" -H "X-Custom-Auth: <your-secret>"
+
 # Get a key
 curl -X GET "https://<your-worker-url>/get?key=<key>&namespace=<namespace>" -H "X-Custom-Auth: <your-secret>"
 
@@ -214,4 +217,5 @@ cf_kv.delete_all_keys(namespace)
 
 ## TODO
 
-- [ ] Add search endpoint to middleware (Only support with the UI for now)
+- [x] Add search endpoint to middleware (Only support with the UI for now)
+- [ ] Add search endpoint to python library

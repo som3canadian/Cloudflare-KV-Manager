@@ -432,18 +432,38 @@ textarea.form-input {
 /* Pagination Styles */
 .table-footer {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 1rem;
   border-top: 1px solid var(--border-color);
+  min-height: 60px;
 }
 
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  padding: 16px;
+}
+
+.pagination-center {
+  display: flex;
+  justify-content: center;
+  grid-column: 2;
+}
+
+/* Position total keys info in the first grid column */
+.total-namespace-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  grid-column: 1;
+  justify-self: start;
+}
+
+.total-namespace-keys p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
 .total-keys {
@@ -850,4 +870,27 @@ textarea.form-input {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+.total-count {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background: #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9em;
+}
+
+/* Loading spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+  font-size: 18px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

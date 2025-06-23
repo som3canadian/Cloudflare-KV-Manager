@@ -176,43 +176,48 @@
       </table>
 
       <div class="table-footer">
-        <span class="total-keys">
-          {{ searchQuery ?
-            `Found ${kvData.length} matching keys` :
-            `Showing ${kvData.length} keys${hasMoreData ? '' : ''}`
-          }}
-        </span>
-        <div class="pagination">
-          <button
-            @click="fetchData(true)"
-            :disabled="loading || currentPage === 1"
-            class="page-btn"
-          >
-            First
-          </button>
-          <button
-            @click="fetchPreviousPage"
-            :disabled="loading || currentPage === 1"
-            class="page-btn"
-          >
-            Previous
-          </button>
-          <span class="page-info">
-            Page {{ currentPage }}
-          </span>
-          <button
-            @click="fetchNextPage"
-            :disabled="loading || !hasMoreData"
-            class="page-btn"
-          >
-            Next
-          </button>
-          <select v-model="pageSize" class="page-size-select">
-            <option :value="10">10 per page</option>
-            <option :value="25">25 per page</option>
-            <option :value="50">50 per page</option>
-            <option :value="100">100 per page</option>
-          </select>
+        <div class="total-namespace-keys">
+          <p class="total-namespace-keys">Total: {{ totalKeys }}</p>
+          <p class="total-keys">
+            {{ searchQuery ?
+              `Found ${filteredKeys} matching keys` :
+              `Showing ${kvData.length} keys`
+            }}
+          </p>
+        </div>
+        <div class="pagination-center">
+          <div class="pagination">
+            <button
+              @click="fetchData(true)"
+              :disabled="loading || currentPage === 1"
+              class="page-btn"
+            >
+              First
+            </button>
+            <button
+              @click="fetchPreviousPage"
+              :disabled="loading || currentPage === 1"
+              class="page-btn"
+            >
+              Previous
+            </button>
+            <span class="page-info">
+              Page {{ currentPage }}
+            </span>
+            <button
+              @click="fetchNextPage"
+              :disabled="loading || !hasMoreData"
+              class="page-btn"
+            >
+              Next
+            </button>
+            <select v-model="pageSize" class="page-size-select">
+              <option :value="10">10 per page</option>
+              <option :value="25">25 per page</option>
+              <option :value="50">50 per page</option>
+              <option :value="100">100 per page</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -611,6 +616,8 @@ export default {
       deletionStatus: null,
       currentPage: 1,
       pageSize: 10,
+      totalKeys: 0,
+      filteredKeys: 0,
       showAddModal: false,
       isSubmitting: false,
       newKey: {
@@ -774,7 +781,7 @@ export default {
       try {
         const params = new URLSearchParams({
           namespace: this.selectedNamespace,
-          limit: String(this.pageSize)  // Use pageSize consistently for both search and normal listing
+          limit: String(this.pageSize)
         })
 
         if (this.cursor && !resetData) {
@@ -792,40 +799,21 @@ export default {
         const data = await response.json()
 
         if (data.status === 'success') {
+          // Update total keys from the response
+          this.totalKeys = data.data.total_keys
+
+          // Update filtered keys count if searching
+          if (this.searchQuery && data.data.filtered_keys !== undefined) {
+            this.filteredKeys = data.data.filtered_keys
+          }
+
           // Filter out keys with null values
           const validKeys = data.data.keys.filter(key => key.value !== null)
 
-          let filteredKeys = validKeys
-          if (this.searchQuery) {
-            const query = this.searchQuery.toLowerCase()
-            filteredKeys = validKeys.filter(item => {
-              // Search in key name
-              if (item.name.toLowerCase().includes(query)) return true
-
-              // Search in value
-              let valueStr
-              try {
-                valueStr = typeof item.value === 'object' ?
-                  JSON.stringify(item.value) : String(item.value)
-              } catch {
-                valueStr = String(item.value)
-              }
-              if (valueStr.toLowerCase().includes(query)) return true
-
-              // Search in metadata
-              if (item.metadata) {
-                const metadataStr = JSON.stringify(item.metadata).toLowerCase()
-                if (metadataStr.includes(query)) return true
-              }
-
-              return false
-            })
-          }
-
           if (resetData) {
-            this.kvData = filteredKeys
+            this.kvData = validKeys
           } else {
-            this.kvData = [...this.kvData, ...filteredKeys]
+            this.kvData = [...this.kvData, ...validKeys]
           }
 
           this.cursor = data.data.cursor
